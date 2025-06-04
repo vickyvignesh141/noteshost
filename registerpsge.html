@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register - Note Nest</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+      position: relative;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 20px;
+      text-align: center;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    .required::after {
+      content: " *";
+      color: red;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .light-mode {
+      background-color: #ffffff;
+      color: #000000;
+    }
+
+    .light-mode .container {
+      background-color: #f9f9f9;
+    }
+
+    .dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .dark-mode .container {
+      background-color: #1e1e1e;
+    }
+
+    #toggleMode {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .light-mode #toggleMode {
+      background-color: #ffffff;
+      color: #121212;
+    }
+
+    .dark-mode #toggleMode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .error-message {
+      color: red;
+      font-size: 14px;
+      margin: -10px 0 10px 0;
+      text-align: left;
+    }
+  </style>
+</head>
+<body class="light-mode">
+  <div class="container">
+    <h1>Register</h1>
+    <form id="registerForm" novalidate>
+      <label for="firstName" class="required">First Name</label>
+      <input type="text" id="firstName" name="firstName" required />
+      <div id="firstNameError" class="error-message"></div>
+
+      <label for="lastName" class="required">Last Name</label>
+      <input type="text" id="lastName" name="lastName" maxlength="1" required />
+      <div id="lastNameError" class="error-message"></div>
+
+      <label for="email" class="required">Email</label>
+      <input type="email" id="email" name="email" placeholder="example@gmail.com" required />
+      <div id="emailError" class="error-message"></div>
+
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" name="phone" placeholder="Optional" />
+      <div id="phoneError" class="error-message"></div>
+
+      <label for="password" class="required">Password</label>
+      <input type="password" id="password" name="password" required />
+      <div id="passwordError" class="error-message"></div>
+
+      <label for="confirmPassword" class="required">Confirm Password</label>
+      <input type="password" id="confirmPassword" name="confirmPassword" required />
+      <div id="confirmPasswordError" class="error-message"></div>
+
+      <button type="submit">Register</button>
+    </form>
+  </div>
+
+  <button id="toggleMode" title="Toggle Dark/Light Mode">🌙</button>
+
+  <script>
+    const body = document.body;
+    const toggleBtn = document.getElementById("toggleMode");
+
+    function updateToggleIconAndStyle() {
+      toggleBtn.textContent = body.classList.contains("dark-mode") ? "☀" : "🌙";
+    }
+
+    toggleBtn.addEventListener("click", () => {
+      body.classList.toggle("dark-mode");
+      body.classList.toggle("light-mode");
+      updateToggleIconAndStyle();
+    });
+
+    updateToggleIconAndStyle();
+
+    const form = document.getElementById("registerForm");
+    const firstNameInput = document.getElementById("firstName");
+    const lastNameInput = document.getElementById("lastName");
+    const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phone");
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirmPassword");
+
+    const firstNameError = document.getElementById("firstNameError");
+    const lastNameError = document.getElementById("lastNameError");
+    const emailError = document.getElementById("emailError");
+    const phoneError = document.getElementById("phoneError");
+    const passwordError = document.getElementById("passwordError");
+    const confirmPasswordError = document.getElementById("confirmPasswordError");
+
+    function validateEmail(email) {
+      return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
+    }
+
+    function isStrongPassword(password) {
+      return password.length >= 8 && /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      let valid = true;
+
+      firstNameError.textContent = "";
+      lastNameError.textContent = "";
+      emailError.textContent = "";
+      phoneError.textContent = "";
+      passwordError.textContent = "";
+      confirmPasswordError.textContent = "";
+
+      if (!firstNameInput.value.trim()) {
+        firstNameError.textContent = "First name is required.";
+        valid = false;
+      }
+
+      if (!lastNameInput.value.trim()) {
+        lastNameError.textContent = "Last name is required.";
+        valid = false;
+      } else if (lastNameInput.value.trim().length !== 1) {
+        lastNameError.textContent = "Last name must be exactly one character.";
+        valid = false;
+      }
+
+      if (!emailInput.value.trim()) {
+        emailError.textContent = "Email is required.";
+        valid = false;
+      } else if (!validateEmail(emailInput.value.trim())) {
+        emailError.textContent = "Email must be a valid gmail address.";
+        valid = false;
+      }
+
+      if (phoneInput.value.trim()) {
+        if (!/^[0-9]{10}$/.test(phoneInput.value.trim())) {
+          phoneError.textContent = "Phone number must be exactly 10 digits.";
+          valid = false;
+        }
+      }
+
+      const password = passwordInput.value.trim();
+      const confirmPassword = confirmPasswordInput.value.trim();
+
+      if (!password) {
+        passwordError.textContent = "Password is required.";
+        valid = false;
+      } else if (!isStrongPassword(password)) {
+        passwordError.textContent = "Password must be at least 8 characters and include a special character.";
+        valid = false;
+      }
+
+      if (!confirmPassword) {
+        confirmPasswordError.textContent = "Confirm password is required.";
+        valid = false;
+      } else if (password !== confirmPassword) {
+        confirmPasswordError.textContent = "Passwords do not match.";
+        valid = false;
+      }
+
+      if (valid) {
+        alert("Registration successful! Data saved.");
+        form.reset();
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+

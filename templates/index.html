@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Notes App</title>
+  <style>
+    body {
+      font-family: Arial;
+      background-color: #f0f0f0;
+      color: #222;
+      padding: 20px;
+    }
+
+    .dark-mode {
+      background-color: #1e1e1e;
+      color: #ddd;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input, textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+    }
+
+    .note {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .dark-mode .note {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>My Notes</h1>
+
+  <!-- Toggle Button -->
+  <button onclick="toggleMode()">Toggle Light/Dark Mode</button>
+
+  <!-- Note Form -->
+  <form id="noteForm">
+    <input type="text" id="title" placeholder="Title" required> 
+    <textarea id="content" placeholder="Write your note..." required></textarea>
+    <button type="submit">Add Note</button>
+  </form>
+
+  <h2>Saved Notes</h2>
+  <div id="notesList">
+    {% for note in notes %}
+      <div class="note"><strong>{{ note.title }}</strong><br>{{ note.content }}</div>
+    {% endfor %}
+  </div>
+
+  <script>
+    // Toggle between light and dark mode
+    function toggleMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    // Form submission logic
+    document.getElementById('noteForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+
+      const response = await fetch('http://127.0.0.1:5000/add_note', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title, content })
+      });
+
+      const result = await response.json();
+      alert(result.message);
+
+      // Reload page to update note list
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

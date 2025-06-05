@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 import os
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # MongoDB connection
 client = MongoClient("mongodb://localhost:27017/")
@@ -36,6 +36,6 @@ def add_note():
     notes_collection.insert_one(note)
     return jsonify({"message": "Note added successfully!"}), 200
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

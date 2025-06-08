@@ -1,3 +1,4 @@
+<!-- login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Student Backend Project</title>
   <style>
+    /* styles same as before */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -33,7 +35,6 @@
       text-decoration: underline;
     }
 
-    /* Light mode */
     .light-mode {
       background-color: #ffffff;
       color: #000000;
@@ -43,7 +44,6 @@
       background-color: #f9f9f9;
     }
 
-    /* Dark mode */
     .dark-mode {
       background-color: #121212;
       color: #ffffff;
@@ -67,18 +67,15 @@
 </head>
 <body class="light-mode">
   <div class="container">
-    <h1>Backend Development Project</h1>
     <p>Login to access the app:</p>
 
-    
-
-    <form id="loginForm">
+    <form id="loginForm" method="POST" action="/login">
       <input type="email" placeholder="Email" name="email" required />
       <input type="password" placeholder="Password" name="password" required />
       <button type="submit">Login</button>
     </form>
 
-    <p>Don't have an account? <a href="#">Register</a></p>
+    <p>Don't have an account? <a href="register.html">Register</a></p>
     <button id="toggleMode">Switch to Dark Mode</button>
   </div>
 

@@ -1,76 +1,105 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, session
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+from functools import wraps
 import os
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "your_secret_key_here")  # session secret key
+# Load environment variables from .env file
+load_dotenv()
 
-# MongoDB configuration
-MONGO_URI = os.environ.get("MONGO_URI", "your-mongodb-uri")
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "your-secret-key")  # Set in .env
+
+# MongoDB connection URI from .env
+MONGO_URI = os.getenv("MONGO_URI", "your-mongodb-uri")
 client = MongoClient(MONGO_URI)
 db = client['notesdb']
-users_collection = db['users']
 notes_collection = db['notes']
+users_collection = db['users']
 
-# Home route
+# Decorator to require login for protected routes
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return render_template('login.html')
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Home route → show login page
 @app.route('/')
 def home():
-    if 'user' in session:
-        return redirect(url_for('notes'))
     return render_template('login.html')
 
-# Register route
-@app.route('/register', methods=['GET', 'POST'])
+# Registration route
+@app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    data = request.form
+    first = data.get('firstName')
+    last = data.get('lastName')
+    email = data.get('email')
+    password = data.get('password')
+    confirm = data.get('confirmPassword')
 
-        if users_collection.find_one({'username': username}):
-            return "User already exists", 400
+    if not all([first, last, email, password, confirm]):
+        return "Missing fields", 400
+    if password != confirm:
+        return "Passwords do not match", 400
+    if users_collection.find_one({"email": email}):
+        return "Email already registered", 400
 
-        hashed_password = generate_password_hash(password)
-        users_collection.insert_one({'username': username, 'password': hashed_password})
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
+    hashed = generate_password_hash(password)
+    users_collection.insert_one({
+        "firstName": first,
+        "lastName": last,
+        "email": email,
+        "password": hashed
+    })
+    return render_template('login.html')
 
 # Login route
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        user = users_collection.find_one({'username': username})
+    data = request.form
+    email = data.get('email')
+    password = data.get('password')
 
-        if user and check_password_hash(user['password'], password):
-            session['user'] = username
-            return redirect(url_for('notes'))
-        else:
-            return "Invalid username or password", 401
-
-    return render_template('login.html')
+    user = users_collection.find_one({"email": email})
+    if user and check_password_hash(user['password'], password):
+        session['user_id'] = str(user['_id'])
+        return redirect('/notes')
+    else:
+        return "Invalid credentials", 401
 
 # Logout route
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
-    return redirect(url_for('login'))
+    session.pop('user_id', None)
+    return render_template('login.html')
 
-# Notes page (protected)
+# Notes page - protected route
 @app.route('/notes')
+@login_required
 def notes():
-    if 'user' not in session:
-        return redirect(url_for('login'))
     return render_template('notes.html')
 
-# Add note API (protected)
-@app.route('/add_note', methods=['POST'])
-def add_note():
-    if 'user' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+# Get notes
+@app.route('/api/notes', methods=['GET'])
+@login_required
+def get_notes():
+    user_id = session['user_id']
+    user_notes = list(notes_collection.find({"user_id": user_id}))
+    for note in user_notes:
+        note['_id'] = str(note['_id'])  # Convert ObjectId to string
+    return jsonify(user_notes), 200
 
+# Add new note
+@app.route('/api/notes', methods=['POST'])
+@login_required
+def add_note():
+    user_id = session['user_id']
     data = request.get_json()
     title = data.get('title')
     content = data.get('content')
@@ -79,14 +108,25 @@ def add_note():
         return jsonify({"message": "Missing title or content"}), 400
 
     note = {
+        "user_id": user_id,
         "title": title,
-        "content": content,
-        "username": session['user']  # Link note to user
+        "content": content
     }
-    notes_collection.insert_one(note)
-    return jsonify({"message": "Note added successfully!"}), 200
+    result = notes_collection.insert_one(note)
+    note['_id'] = str(result.inserted_id)
+    return jsonify(note), 201
 
-# Run the Flask app
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+# Delete note
+@app.route('/api/notes/<note_id>', methods=['DELETE'])
+@login_required
+def delete_note(note_id):
+    user_id = session['user_id']
+    result = notes_collection.delete_one({"_id": ObjectId(note_id), "user_id": user_id})
+    if result.deleted_count == 0:
+        return jsonify({"message": "Note not found"}), 404
+    return jsonify({"message": "Note deleted"}), 200
+
+# Run the app
+if __name__ == "_main_":
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
